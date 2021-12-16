@@ -1,5 +1,6 @@
 *.exe
 *.o
-*.tga
 *.gch
 *.out
+# ignore tga files in root
+/*.tga 
