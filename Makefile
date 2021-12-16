@@ -14,6 +14,8 @@ else
 endif
 
 all: $(DESTDIR)$(TARGET)
+	main.exe
+	C:\Program Files (x86)\XnView\xnview.exe output.tga
 
 $(DESTDIR)$(TARGET): $(OBJECTS)
 	$(SYSCONF_LINK) -Wall $(LDFLAGS) -o $(DESTDIR)$(TARGET) $(OBJECTS) $(LIBS)
