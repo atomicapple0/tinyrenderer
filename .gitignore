@@ -5,3 +5,4 @@
 *.out
 # ignore tga files in root
 /*.tga 
+.vscode/**
