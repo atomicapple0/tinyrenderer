@@ -18,13 +18,15 @@ all: $(DESTDIR)$(TARGET)
 	C:\Program Files (x86)\XnView\xnview.exe output.tga
 
 $(DESTDIR)$(TARGET): $(OBJECTS)
-	$(SYSCONF_LINK) -Wall $(LDFLAGS) -o $(DESTDIR)$(TARGET) $(OBJECTS) $(LIBS)
+	$(SYSCONF_LINK) -g -pg -Wall $(LDFLAGS) -o $(DESTDIR)$(TARGET) $(OBJECTS) $(LIBS)
 
 $(OBJECTS): %.o: %.cpp
-	$(SYSCONF_LINK) -Wall $(CPPFLAGS) -c $(CFLAGS) $< -o $@
+	$(SYSCONF_LINK) -g -pg -Wall $(CPPFLAGS) -c $(CFLAGS) $< -o $@
 
 clean:
 	-$(RM) $(OBJECTS)
 	-$(RM) $(TARGET)
 	-$(RM) *.tga
+	-$(RM) *.out
+	-$(RM) *.gch
 	-$(RM) *.exe
