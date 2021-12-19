@@ -77,7 +77,7 @@ void triangle(Vec2i *pts, TGAImage &image, TGAColor color) {
 	for (int i=0; i<3; i++) {
 		for (int j=0; j<2; j++) {
 			bboxmin[j] = std::max(0, std::min(bboxmin[j], pts[i][j]));
-			bboxmax[j] = std::min(clamp[j], std::max(bboxmin[j], pts[i][j]));
+			bboxmax[j] = std::min(clamp[j], std::max(bboxmax[j], pts[i][j]));
 		}
 	}
 	
