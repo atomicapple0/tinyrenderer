@@ -47,34 +47,50 @@ void line(Vec2i t0, Vec2i t1, TGAImage &image, TGAColor color) {
 	line(t0.x, t0.y, t1.x, t1.y, image, color);
 }
 
-void triangle(Vec2i t0, Vec2i t1, Vec2i t2, TGAImage &image, TGAColor color) {
-	// sort the vertices, t0, t1, t2 lower−to−upper (bubblesort yay!) 
-	if (t0.y>t1.y) std::swap(t0, t1); 
-    if (t0.y>t2.y) std::swap(t0, t2); 
-    if (t1.y>t2.y) std::swap(t1, t2); 
-	int total_height = t2.y-t0.y;
-	for (int y=t0.y; y<=t1.y; y++) {
-		int segment_height = t1.y-t0.y+1;
-		float alpha = (float)(y-t0.y)/total_height;
-		float beta = (float)(y-t0.y)/segment_height; // be careful with divisions by zero 
-		Vec2i A = t0 + (t2-t0)*alpha;
-		Vec2i B = t0 + (t1-t0)*beta;
-		if (A.x>B.x) std::swap(A,B);
-		for (int j=A.x; j<=B.x; j++) {
-			image.set(j,y,color); // attention, due to int casts t0.y+i != A.y 
+Vec3f barycentric(Vec2i *pts, Vec2i P) {
+	// S = <up, vp, s>
+	Vec3f S =
+		Vec3f(pts[2][0] - pts[0][0],
+			  pts[1][0] - pts[0][0],
+			  pts[0][0] - P[0]) ^
+		Vec3f(pts[2][1] - pts[0][1],
+			  pts[1][1] - pts[0][1],
+			  pts[0][1] - P[1]);
+	float up, vp, s, u, v;
+	up = S.x; vp = S.y; s = S.z;
+	// P = A + u*AB + v*BC AKA
+	// P = (1-u-v)*A + u*B + v*C
+	u = up / s; v = vp / s;
+	// if abs(s) < 1, then s == 0 since s integer
+	// thus degenerate case
+	if (std::abs(s) < 1) {
+		return Vec3f(-1,-1,-1);
+	}
+	return Vec3f(1.-u-v, u, v);
+}
+
+void triangle(Vec2i *pts, TGAImage &image, TGAColor color) {
+	Vec2i bboxmin(image.get_width()-1,image.get_height()-1);
+	Vec2i bboxmax(0,0);
+	Vec2i clamp(image.get_width()-1,image.get_height()-1);
+
+	for (int i=0; i<3; i++) {
+		for (int j=0; j<2; j++) {
+			bboxmin[j] = std::max(0, std::min(bboxmin[j], pts[i][j]));
+			bboxmax[j] = std::min(clamp[j], std::max(bboxmin[j], pts[i][j]));
 		}
 	}
-	for (int y=t1.y; y<=t2.y; y++) { 
-        int segment_height =  t2.y-t1.y+1; 
-        float alpha = (float)(y-t0.y)/total_height; 
-        float beta  = (float)(y-t1.y)/segment_height; // be careful with divisions by zero 
-        Vec2i A = t0 + (t2-t0)*alpha; 
-        Vec2i B = t1 + (t2-t1)*beta; 
-        if (A.x>B.x) std::swap(A, B); 
-        for (int j=A.x; j<=B.x; j++) { 
-            image.set(j, y, color); // attention, due to int casts t0.y+i != A.y 
-        } 
-    } 
+	
+	// P in ABC iff:
+	// 	- u,v,(1-u-v) \in [0,1]
+	Vec2i P;
+	for (P.x=bboxmin.x; P.x<=bboxmax.x; P.x++) {
+		for (P.y=bboxmin.y; P.y<=bboxmax.y; P.y++) {
+			Vec3f bc_screen = barycentric(pts, P);
+			if (bc_screen.x<0 || bc_screen.y<0 || bc_screen.z<0) continue;
+			image.set(P.x, P.y, color);
+		}
+	}
 }
 
 int main(int argc, char** argv) {
@@ -100,7 +116,7 @@ int main(int argc, char** argv) {
 		n.normalize();
 		float intensity = n*light_dir;
 		if (intensity>0) { 
-			triangle(screen_coords[0], screen_coords[1], screen_coords[2], image, TGAColor(intensity*255, intensity*255, intensity*255, 255)); 
+			triangle(screen_coords, image, TGAColor(intensity*255, intensity*255, intensity*255, 255)); 
 		} 
 	}
 
