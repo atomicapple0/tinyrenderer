@@ -67,18 +67,8 @@ Vec3f barycentric(Vec2i *pts, Vec2i P) {
 	if (std::abs(s) < 1) {
 		return Vec3f(-1,-1,-1);
 	}
-	// std::cout << "1.-u-v:" << 1.-u-v << "\n";
-	// std::cout << "1.-(up+vp)/s:" << 1.-(up+vp)/s << "\n";
-	// std::cout << "up:" << up << "\n";
-	// std::cout << "vp:" << vp << "\n";
-	// std::cout << "s:" << s << "\n";
-	// std::cout << "u:" << u << "\n";
-	// std::cout << "v:" << v << "\n";
-	// std::cout << "\n";
-	// std::cout << "\n";
-	// Due to double precision (?): 1.-(up+vp)/s != 1.-u-v
-	// The latter results in random black dots in the output for some reason
-	return Vec3f(1.-(up+vp)/s, u, v);
+	// due to floating point precision: 1.-(up+vp)/s != 1.-u-v
+	return Vec3f(1.-up/s-vp/s, u, v);
 }
 
 void triangle(Vec2i *pts, TGAImage &image, TGAColor color) {
@@ -99,7 +89,8 @@ void triangle(Vec2i *pts, TGAImage &image, TGAColor color) {
 	for (P.x=bboxmin.x; P.x<=bboxmax.x; P.x++) {
 		for (P.y=bboxmin.y; P.y<=bboxmax.y; P.y++) {
 			Vec3f bc_screen = barycentric(pts, P);
-			if (bc_screen.x<0 || bc_screen.y<0 || bc_screen.z<0) continue;
+			// leniancy for floating point error
+			if (bc_screen.x<-0.01 || bc_screen.y<-0.01 || bc_screen.z<-0.01) continue;
 			image.set(P.x, P.y, color);
 		}
 	}
