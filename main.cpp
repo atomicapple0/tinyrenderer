@@ -1,3 +1,4 @@
+#include <iostream>
 #include <vector>
 #include <cmath>
 #include "tgaimage.h"
@@ -56,7 +57,7 @@ Vec3f barycentric(Vec2i *pts, Vec2i P) {
 		Vec3f(pts[2][1] - pts[0][1],
 			  pts[1][1] - pts[0][1],
 			  pts[0][1] - P[1]);
-	float up, vp, s, u, v;
+	double up, vp, s, u, v;
 	up = S.x; vp = S.y; s = S.z;
 	// P = A + u*AB + v*BC AKA
 	// P = (1-u-v)*A + u*B + v*C
@@ -66,7 +67,18 @@ Vec3f barycentric(Vec2i *pts, Vec2i P) {
 	if (std::abs(s) < 1) {
 		return Vec3f(-1,-1,-1);
 	}
-	return Vec3f(1.-u-v, u, v);
+	// std::cout << "1.-u-v:" << 1.-u-v << "\n";
+	// std::cout << "1.-(up+vp)/s:" << 1.-(up+vp)/s << "\n";
+	// std::cout << "up:" << up << "\n";
+	// std::cout << "vp:" << vp << "\n";
+	// std::cout << "s:" << s << "\n";
+	// std::cout << "u:" << u << "\n";
+	// std::cout << "v:" << v << "\n";
+	// std::cout << "\n";
+	// std::cout << "\n";
+	// Due to double precision (?): 1.-(up+vp)/s != 1.-u-v
+	// The latter results in random black dots in the output for some reason
+	return Vec3f(1.-(up+vp)/s, u, v);
 }
 
 void triangle(Vec2i *pts, TGAImage &image, TGAColor color) {
