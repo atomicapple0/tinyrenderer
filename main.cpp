@@ -88,7 +88,7 @@ void triangle(Vec3f pts[3], float *zbuffer, TGAImage &image, TGAColor color) {
 		for (P.y=bboxmin.y; P.y<=bboxmax.y; P.y++) {
 			Vec3f bc_screen = barycentric(pts, P);
 			// leniancy for floating point error
-			float err = -.00001;
+			float err = -.001;
 			if (bc_screen.x<err || bc_screen.y<err || bc_screen.z<err) {
 				continue;
 			}
