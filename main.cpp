@@ -81,8 +81,7 @@ void triangle(Vec3f pts[3], float *zbuffer, TGAImage &image, TGAColor color) {
 			bboxmax[j] = std::min(clamp[j], std::max(bboxmax[j], pts[i][j]));
 		}
 	}
-	// P in ABC iff:
-	// 	- u,v,(1-u-v) \in [0,1]
+	// P in ABC iff u,v,(1-u-v) \in [0,1]
 	Vec3f P;
 	for (P.x=bboxmin.x; P.x<=bboxmax.x; P.x++) {
 		for (P.y=bboxmin.y; P.y<=bboxmax.y; P.y++) {
@@ -115,10 +114,8 @@ int main(int argc, char** argv) {
 		model = new Model("obj/african_head.obj");
 	}
 
+	float* zbuffer = new float[width*height];
 	Vec3f light_dir = Vec3f(0,0,-1);
-
-	float *zbuffer = new float[width*height];
-	// float zbuffer[width*height];
 	for (int i=0; i<width*height; i++) {
 		zbuffer[i] = -std::numeric_limits<float>::max();
 	}
@@ -139,26 +136,7 @@ int main(int argc, char** argv) {
         triangle(screen_coords, zbuffer, image, color);
     }
 
-    // for (int i=0; i<model->nfaces(); i++) {
-	// 	std::vector<int> face = model->face(i); 
-	// 	Vec3f screen_coords[3];
-	// 	Vec3f world_coords[3];
-	// 	for (int j=0; j<3; j++) {
-	// 		Vec3f v = model->vert(face[j]);
-	// 		screen_coords[j] = Vec3f((v.x+1.)*width/2., (v.y+1.)*height/2., v.z);
-	// 		world_coords[j]  = v;
-	// 	}
-	// 	Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]);
-	// 	n.normalize();
-	// 	float intensity = n*light_dir;
-	// 	if (intensity>0) { 
-	// 		TGAColor color = TGAColor(intensity*255, intensity*255, intensity*255, 255);
-	// 		triangle(screen_coords, zbuffer, image, color); 
-	// 	} 
-	// }
-
 	image.flip_vertically(); // i want to have the origin at the left bottom corner of the image
 	image.write_tga_file("output.tga");
 	return 0;
 }
-
