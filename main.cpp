@@ -57,12 +57,12 @@ void line(Vec2i t0, Vec2i t1, TGAImage &image, TGAColor color) {
 Vec3f barycentric(Vec3f pts[3], Vec3f P) {
 	// S = <up, vp, s>
 	Vec3f S =
-		Vec3f(pts[2][0] - pts[0][0],
-			  pts[1][0] - pts[0][0],
-			  pts[0][0] - P[0]) ^
-		Vec3f(pts[2][1] - pts[0][1],
-			  pts[1][1] - pts[0][1],
-			  pts[0][1] - P[1]);
+		Vec3f(pts[2].x - pts[0].x,
+			  pts[1].x - pts[0].x,
+			  pts[0].x - P.x) ^
+		Vec3f(pts[2].y - pts[0].y,
+			  pts[1].y - pts[0].y,
+			  pts[0].y - P.y);
 	double up, vp, s, u, v;
 	up = S.x; vp = S.y; s = S.z;
 	// P = A + u*AB + v*BC AKA
@@ -76,7 +76,7 @@ Vec3f barycentric(Vec3f pts[3], Vec3f P) {
 	return Vec3f(-1,-1,-1);
 }
 
-void triangle(Vec3f pts[3], Vec2i uvs[3], TGAImage &image, float *zbuffer) {
+void triangle(Vec3f pts[3], Vec2f uvs[3], TGAImage &image, float *zbuffer) {
     Vec2f bboxmin( std::numeric_limits<float>::max(),  std::numeric_limits<float>::max());
     Vec2f bboxmax(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
 	Vec2f clamp(image.get_width()-1,image.get_height()-1);
@@ -93,19 +93,18 @@ void triangle(Vec3f pts[3], Vec2i uvs[3], TGAImage &image, float *zbuffer) {
 			Vec3f bc_screen = barycentric(pts, P);
 			// leniancy for floating point error
 			float err = -.001;
-			if (bc_screen.x<err || bc_screen.y<err || bc_screen.z<err) {
-				continue;
-			}
+			if (bc_screen.x<err || bc_screen.y<err || bc_screen.z<err) continue;
 			P.z = 0;
-			Vec2f uvP;
+			Vec2f uvP(0,0);
 			for (int i=0; i<3; i++) {
-				P.z += pts[i][2]*bc_screen[i];
+				P.z += pts[i].z*bc_screen[i];
 				uvP.x += uvs[i].x*bc_screen[i];
 				uvP.y += uvs[i].y*bc_screen[i];
 			}
 			if (zbuffer[int(P.x+P.y*width)]<P.z) {
 				zbuffer[int(P.x+P.y*width)] = P.z;
-				TGAColor color = model->diffuse(uvP.x,uvP.y);
+				// TGAColor color = model->diffuse(uvs[0].x,uvs[0].y);
+				TGAColor color = model->diffuse(uvP);
 				image.set(P.x, P.y, color);
 			}
 		}
@@ -131,12 +130,10 @@ int main(int argc, char** argv) {
         std::vector<int> face = model->face(i);
         Vec3f screen_coords[3];
         Vec3f world_coords[3];
-        Vec2i texture_coords[3];
+        Vec2f texture_coords[3];
         for (int j=0; j<3; j++) {
 			world_coords[j] = model->vert(face[j]);
-		
 			screen_coords[j] = world2screen(model->vert(face[j]));
-		
 			texture_coords[j] = model->uv(i,j); 
 		}
 		// Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]);

@@ -76,11 +76,13 @@ void Model::load_texture(std::string filename, const char *suffix, TGAImage &img
     }
 }
 
-TGAColor Model::diffuse(int x, int y) {
-    return diffusemap_.get(x, y);
+TGAColor Model::diffuse(Vec2f uv){
+    Vec2i uvwh(uv.x*diffusemap_.get_width(), uv.y*diffusemap_.get_height());  
+    return diffusemap_.get(uvwh.x,uvwh.y);
 }
 
-Vec2i Model::uv(int iface, int nvert) {
+
+Vec2f Model::uv(int iface, int nvert) {
     int idx = faces_[iface][nvert][1];
-    return Vec2i(uv_[idx].x*diffusemap_.get_width(), uv_[idx].y*diffusemap_.get_height());
+    return uv_[idx];
 }
