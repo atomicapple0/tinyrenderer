@@ -57,10 +57,10 @@ int Model::nfaces() {
 
 std::vector<int> Model::face(int idx) {
     std::vector<int> face;
-    for (int i=0; i<nfaces(); i++) {
+    for (int i=0; i<(int)faces_[idx].size(); i++) {
         face.push_back(faces_[idx][i][0]);
     }
-    return faces_[idx];
+    return face;
 }
 
 Vec3f Model::vert(int i) {
@@ -70,14 +70,14 @@ Vec3f Model::vert(int i) {
 void Model::load_texture(std::string filename, const char *suffix, TGAImage &img) {
     size_t dot = filename.find_last_of(".");
     if (dot!=std::string::npos) {
-        std::string texfile = texfile.substr(0,dot) + std::string(suffix);
+        std::string texfile = filename.substr(0,dot) + std::string(suffix);
         std::cerr << "texture file " << texfile << " loading " << (img.read_tga_file(texfile.c_str()) ? "ok" : "failed") << std::endl;
         img.flip_vertically();
     }
 }
 
-TGAColor Model::diffuse(Vec2i uv) {
-    return diffusemap_.get(uv.x, uv.y);
+TGAColor Model::diffuse(int x, int y) {
+    return diffusemap_.get(x, y);
 }
 
 Vec2i Model::uv(int iface, int nvert) {
