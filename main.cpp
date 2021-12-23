@@ -65,8 +65,7 @@ Vec3f barycentric(Vec3f pts[3], Vec3f P) {
 			  pts[0].y - P.y);
 	double up, vp, s, u, v;
 	up = S.x; vp = S.y; s = S.z;
-	// P = A + u*AB + v*BC AKA
-	// P = (1-u-v)*A + u*B + v*C
+	// P = (1-u-v)*A + v*B + u*C
 	u = up / s; v = vp / s;
 	if (std::abs(s) > .01) {
 		// due to floating point precision: 1.-(up+vp)/s != 1.-u-v
