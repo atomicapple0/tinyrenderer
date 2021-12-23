@@ -71,6 +71,39 @@ Vec3f barycentric(Vec3f pts[3], Vec3f P) {
 	return Vec3f(-1,-1,-1);
 }
 
+void triangle(Vec3f pts[3], float *zbuffer, TGAImage &image, TGAImage texture) {
+    Vec2f bboxmin( std::numeric_limits<float>::max(),  std::numeric_limits<float>::max());
+    Vec2f bboxmax(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
+	Vec2f clamp(image.get_width()-1,image.get_height()-1);
+	for (int i=0; i<3; i++) {
+		for (int j=0; j<2; j++) {
+			bboxmin[j] = std::max(0.f, 		std::min(bboxmin[j], pts[i][j]));
+			bboxmax[j] = std::min(clamp[j], std::max(bboxmax[j], pts[i][j]));
+		}
+	}
+	// P in ABC iff u,v,(1-u-v) \in [0,1]
+	Vec3f P;
+	for (P.x=bboxmin.x; P.x<=bboxmax.x; P.x++) {
+		for (P.y=bboxmin.y; P.y<=bboxmax.y; P.y++) {
+			Vec3f bc_screen = barycentric(pts, P);
+			// leniancy for floating point error
+			float err = -.001;
+			if (bc_screen.x<err || bc_screen.y<err || bc_screen.z<err) {
+				continue;
+			}
+			P.z = 0;
+			for (int i=0; i<3; i++) {
+				P.z += pts[i][2]*bc_screen[i];
+			}
+			if (zbuffer[int(P.x+P.y*width)]<P.z) {
+				zbuffer[int(P.x+P.y*width)] = P.z;
+				bc_screen.x * pts.
+				color = texture.get()
+				image.set(P.x, P.y, color);
+			}
+		}
+	}
+}
 void triangle(Vec3f pts[3], float *zbuffer, TGAImage &image, TGAColor color) {
     Vec2f bboxmin( std::numeric_limits<float>::max(),  std::numeric_limits<float>::max());
     Vec2f bboxmax(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
@@ -107,12 +140,16 @@ Vec3f world2screen(Vec3f v) {
     return Vec3f(int((v.x+1.)*width/2.+.5), int((v.y+1.)*height/2.+.5), v.z);
 }
 
+Vec3f screen2world(Vec3f v) {
+	return Vec3f(int((v.x-.5)*2./width-1.), int((v.y-.5)*2./height-1.), v.z);
+}
+
+
+
 int main(int argc, char** argv) {
-	if (2==argc) {
-		model = new Model(argv[1]);
-	} else {
-		model = new Model("obj/african_head.obj");
-	}
+	model = new Model("obj/african_head.obj");
+	TGAImage texture = TgaImage();
+	texture.read_tga_file("obj/african_head_diffuse.tga");
 
 	float* zbuffer = new float[width*height];
 	Vec3f light_dir = Vec3f(0,0,-1);
@@ -129,11 +166,11 @@ int main(int argc, char** argv) {
 			world_coords[j] = model->vert(face[j]);
 			screen_coords[j] = world2screen(model->vert(face[j]));
 		}
-		Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]);
-		n.normalize();
-		float intensity = n*light_dir;
-		TGAColor color = TGAColor(intensity*255, intensity*255, intensity*255, 255);
-        triangle(screen_coords, zbuffer, image, color);
+		// Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]);
+		// n.normalize();
+		// float intensity = n*light_dir;
+		// TGAColor color = TGAColor(intensity*255, intensity*255, intensity*255, 255);
+        triangle(screen_coords, zbuffer, image, texture);
     }
 
 	image.flip_vertically(); // i want to have the origin at the left bottom corner of the image
