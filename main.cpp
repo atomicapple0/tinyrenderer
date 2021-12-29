@@ -20,6 +20,19 @@ float *zbuffer = new float[width*height];
 Vec3f light_dir(0,0,-1);
 Vec3f camera(0,0,3);
 
+Vec3f m2v(Matrix m) {
+    return Vec3f(m[0][0]/m[3][0], m[1][0]/m[3][0], m[2][0]/m[3][0]);
+}
+
+Matrix v2m(Vec3f v) {
+    Matrix m(4, 1);
+    m[0][0] = v.x;
+    m[1][0] = v.y;
+    m[2][0] = v.z;
+    m[3][0] = 1.f;
+    return m;
+}
+
 void line(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color) {
 	bool steep;
 	if (std::abs(x0-x1)<std::abs(y0-y1)) { // if the line is steep, we transpose the image
@@ -114,15 +127,14 @@ Vec3f world2screen(Vec3f v) {
     return Vec3f(int((v.x+1.)*width/2.+.5), int((v.y+1.)*height/2.+.5), v.z);
 }
 
-Vec3f screen2world(Vec3f v) {
-	return Vec3f(int((v.x-.5)*2./width-1.), int((v.y-.5)*2./height-1.), v.z);
-}
-
-
 int main(int argc, char** argv) {
 	for (int i=0; i<width*height; i++) {
 		zbuffer[i] = -std::numeric_limits<float>::max();
 	}
+
+	// camera is located on z-axis with distance c from origin
+	Matrix P = Matrix::identity(4);
+	P[3][2] = -1.f / camera.z;
 
 	TGAImage image(width, height, TGAImage::RGB);
 	for (int i=0; i<model->nfaces(); i++) {
@@ -132,7 +144,7 @@ int main(int argc, char** argv) {
         Vec2f texture_coords[3];
         for (int j=0; j<3; j++) {
 			world_coords[j] = model->vert(face[j]);
-			screen_coords[j] = world2screen(model->vert(face[j]));
+			screen_coords[j] = world2screen(m2v(P*v2m(model->vert(face[j]))));
 			texture_coords[j] = model->uv(i,j); 
 		}
 		// Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]);
