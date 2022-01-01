@@ -19,6 +19,36 @@ Model *model = new Model("obj/african_head.obj");
 float *zbuffer = new float[width*height];
 Vec3f light_dir(0,0,-1);
 Vec3f camera(0,0,3);
+Vec3f center(0,0,0);
+Vec3f up(0,1,0);
+Matrix ModelView;
+
+void lookat(Vec3f eye, Vec3f center, Vec3f up) {
+    Vec3f z = (eye-center).normalize();
+    Vec3f x = cross(up,z).normalize();
+    Vec3f y = cross(z,x).normalize();
+    Matrix Minv = Matrix::identity(4);
+    Matrix Tr = Matrix::identity(4);
+    for (int i=0; i<3; i++) {
+        Minv[0][i] = x[i];
+        Minv[1][i] = y[i];
+        Minv[2][i] = z[i];
+        Tr[i][3] = -center[i];
+    }
+    ModelView = Minv*Tr;
+}
+
+Matrix viewport(int x, int y, int w, int h) {
+    Matrix m = Matrix::identity(4);
+    m[0][3] = x+w/2.f;
+    m[1][3] = y+h/2.f;
+    m[2][3] = depth/2.f;
+
+    m[0][0] = w/2.f;
+    m[1][1] = h/2.f;
+    m[2][2] = depth/2.f;
+    return m;
+}
 
 Vec3f m2v(Matrix m) {
     return Vec3f(m[0][0]/m[3][0], m[1][0]/m[3][0], m[2][0]/m[3][0]);
@@ -123,18 +153,15 @@ void triangle(Vec3f pts[3], Vec2f uvs[3], TGAImage &image, float *zbuffer) {
 	}
 }
 
-Vec3f world2screen(Vec3f v) {
-    return Vec3f(int((v.x+1.)*width/2.+.5), int((v.y+1.)*height/2.+.5), v.z);
-}
-
 int main(int argc, char** argv) {
 	for (int i=0; i<width*height; i++) {
 		zbuffer[i] = -std::numeric_limits<float>::max();
 	}
 
 	// camera is located on z-axis with distance c from origin
-	Matrix P = Matrix::identity(4);
-	P[3][2] = -1.f / camera.z;
+	Matrix Projection = Matrix::identity(4);
+	Matrix ViewPort   = viewport(width/8, height/8, width*3/4, height*3/4);
+	Projection[3][2] = -1.f / camera.z;
 
 	TGAImage image(width, height, TGAImage::RGB);
 	for (int i=0; i<model->nfaces(); i++) {
@@ -143,8 +170,9 @@ int main(int argc, char** argv) {
         Vec3f world_coords[3];
         Vec2f texture_coords[3];
         for (int j=0; j<3; j++) {
-			world_coords[j] = model->vert(face[j]);
-			screen_coords[j] = world2screen(m2v(P*v2m(model->vert(face[j]))));
+			Vec3f v = model->vert(face[j]);
+			world_coords[j] = v;
+			screen_coords[j] = m2v(ViewPort*v2m(v));
 			texture_coords[j] = model->uv(i,j); 
 		}
 		// Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]);
