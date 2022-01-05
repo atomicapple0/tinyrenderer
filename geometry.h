@@ -29,6 +29,7 @@ template <class t> struct Vec3 {
 	};
 	Vec3() : x(0), y(0), z(0) {}
 	Vec3(t _x, t _y, t _z) : x(_x),y(_y),z(_z) {}
+    template <class u> Vec3<t>(const Vec3<u> &v);
 	inline Vec3<t> operator ^(const Vec3<t> &v) const { return Vec3<t>(y*v.z-z*v.y, z*v.x-x*v.z, x*v.y-y*v.x); }
 	inline Vec3<t> operator +(const Vec3<t> &v) const { return Vec3<t>(x+v.x, y+v.y, z+v.z); }
 	inline Vec3<t> operator -(const Vec3<t> &v) const { return Vec3<t>(x-v.x, y-v.y, z-v.z); }
@@ -45,6 +46,9 @@ typedef Vec2<float> Vec2f;
 typedef Vec2<int>   Vec2i;
 typedef Vec3<float> Vec3f;
 typedef Vec3<int>   Vec3i;
+
+template <> template <> Vec3<int>::Vec3(const Vec3<float> &v);
+template <> template <> Vec3<float>::Vec3(const Vec3<int> &v);
 
 template <typename t> Vec3<t> cross(Vec3<t> v1, Vec3<t> v2){
   return Vec3<t>(v1.y*v2.z - v1.z*v2.y, v1.z*v2.x - v1.x*v2.z, v1.x*v2.y - v1.y*v2.x);
@@ -69,9 +73,9 @@ class Matrix {
 	int rows, cols;
 public:
 	Matrix(int r=DEFAULT_ALLOC, int c=DEFAULT_ALLOC);
+	Matrix(Vec3f v);
 	inline int nrows();
 	inline int ncols();
-
 	static Matrix identity(int dimensions);
 	std::vector<float>& operator[](const int i);
 	Matrix operator*(const Matrix& a);

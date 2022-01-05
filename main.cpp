@@ -18,12 +18,12 @@ const int depth  = 255;
 Model *model = new Model("obj/african_head.obj");
 float *zbuffer = new float[width*height];
 Vec3f light_dir(0,0,-1);
-Vec3f camera(0,0,3);
-Vec3f center(0,1,0);
+Vec3f eye(1,1,3);
+Vec3f center(0,0,0);
 Vec3f up(0,1,0);
 Matrix ModelView;
 
-void lookat(Vec3f eye, Vec3f center, Vec3f up) {
+Matrix lookat(Vec3f eye, Vec3f center, Vec3f up) {
     Vec3f z = (eye-center).normalize();
     Vec3f x = cross(up,z).normalize();
     Vec3f y = cross(z,x).normalize();
@@ -35,7 +35,7 @@ void lookat(Vec3f eye, Vec3f center, Vec3f up) {
         Minv[2][i] = z[i];
         Tr[i][3] = -center[i];
     }
-    ModelView = Minv*Tr;
+    return Minv*Tr;
 }
 
 Matrix viewport(int x, int y, int w, int h) {
@@ -61,10 +61,6 @@ Matrix v2m(Vec3f v) {
     m[2][0] = v.z;
     m[3][0] = 1.f;
     return m;
-}
-
-Vec3i vf2vi(Vec3f v){
-	return Vec3i(v.x,v.y,v.z);
 }
 
 void line(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color) {
@@ -161,10 +157,11 @@ int main(int argc, char** argv) {
 		zbuffer[i] = -std::numeric_limits<float>::max();
 	}
 
-	// camera is located on z-axis with distance c from origin
+	// eye is located on z-axis with distance c from origin
 	Matrix Projection = Matrix::identity(4);
 	Matrix ViewPort   = viewport(0, 0, width, height);
-	Projection[3][2] = -1.f / camera.z;
+	Matrix ModelView = lookat(eye, center, up);
+	Projection[3][2] = -1.f / eye.z;
 
 	TGAImage image(width, height, TGAImage::RGB);
 	for (int i=0; i<model->nfaces(); i++) {
@@ -175,7 +172,7 @@ int main(int argc, char** argv) {
         for (int j=0; j<3; j++) {
 			Vec3f v = model->vert(face[j]);
 			world_coords[j] = v;
-			screen_coords[j] = vf2vi(m2v(ViewPort*Projection*v2m(v)));
+			screen_coords[j] = m2v(ViewPort*Projection*ModelView*v2m(v));
 			texture_coords[j] = model->uv(i,j); 
 		}
 		// Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]);
