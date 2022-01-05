@@ -19,7 +19,7 @@ Model *model = new Model("obj/african_head.obj");
 float *zbuffer = new float[width*height];
 Vec3f light_dir(0,0,-1);
 Vec3f camera(0,0,3);
-Vec3f center(0,0,0);
+Vec3f center(0,1,0);
 Vec3f up(0,1,0);
 Matrix ModelView;
 
@@ -63,6 +63,10 @@ Matrix v2m(Vec3f v) {
     return m;
 }
 
+Vec3i vf2vi(Vec3f v){
+	return Vec3i(v.x,v.y,v.z);
+}
+
 void line(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color) {
 	bool steep;
 	if (std::abs(x0-x1)<std::abs(y0-y1)) { // if the line is steep, we transpose the image
@@ -97,7 +101,7 @@ void line(Vec2i t0, Vec2i t1, TGAImage &image, TGAColor color) {
 	line(t0.x, t0.y, t1.x, t1.y, image, color);
 }
 
-Vec3f barycentric(Vec3f pts[3], Vec3f P) {
+Vec3f barycentric(Vec3i pts[3], Vec3f P) {
 	// S = <up, vp, s>
 	Vec3f S =
 		Vec3f(pts[2].x - pts[0].x,
@@ -118,13 +122,13 @@ Vec3f barycentric(Vec3f pts[3], Vec3f P) {
 	return Vec3f(-1,-1,-1);
 }
 
-void triangle(Vec3f pts[3], Vec2f uvs[3], TGAImage &image, float *zbuffer) {
-    Vec2f bboxmin( std::numeric_limits<float>::max(),  std::numeric_limits<float>::max());
-    Vec2f bboxmax(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
-	Vec2f clamp(image.get_width()-1,image.get_height()-1);
+void triangle(Vec3i pts[3], Vec2f uvs[3], TGAImage &image, float *zbuffer) {
+    Vec2i bboxmin( std::numeric_limits<int>::max(),  std::numeric_limits<int>::max());
+    Vec2i bboxmax(-std::numeric_limits<int>::max(), -std::numeric_limits<int>::max());
+	Vec2i clamp(image.get_width()-1,image.get_height()-1);
 	for (int i=0; i<3; i++) {
 		for (int j=0; j<2; j++) {
-			bboxmin[j] = std::max(0.f, 		std::min(bboxmin[j], pts[i][j]));
+			bboxmin[j] = std::max(0, 		std::min(bboxmin[j], pts[i][j]));
 			bboxmax[j] = std::min(clamp[j], std::max(bboxmax[j], pts[i][j]));
 		}
 	}
@@ -145,7 +149,6 @@ void triangle(Vec3f pts[3], Vec2f uvs[3], TGAImage &image, float *zbuffer) {
 			}
 			if (zbuffer[int(P.x+P.y*width)]<P.z) {
 				zbuffer[int(P.x+P.y*width)] = P.z;
-				// TGAColor color = model->diffuse(uvs[0].x,uvs[0].y);
 				TGAColor color = model->diffuse(uvP);
 				image.set(P.x, P.y, color);
 			}
@@ -160,19 +163,19 @@ int main(int argc, char** argv) {
 
 	// camera is located on z-axis with distance c from origin
 	Matrix Projection = Matrix::identity(4);
-	Matrix ViewPort   = viewport(width/8, height/8, width*3/4, height*3/4);
+	Matrix ViewPort   = viewport(0, 0, width, height);
 	Projection[3][2] = -1.f / camera.z;
 
 	TGAImage image(width, height, TGAImage::RGB);
 	for (int i=0; i<model->nfaces(); i++) {
         std::vector<int> face = model->face(i);
-        Vec3f screen_coords[3];
+        Vec3i screen_coords[3];
         Vec3f world_coords[3];
         Vec2f texture_coords[3];
         for (int j=0; j<3; j++) {
 			Vec3f v = model->vert(face[j]);
 			world_coords[j] = v;
-			screen_coords[j] = m2v(ViewPort*v2m(v));
+			screen_coords[j] = vf2vi(m2v(ViewPort*Projection*v2m(v)));
 			texture_coords[j] = model->uv(i,j); 
 		}
 		// Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]);

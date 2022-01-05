@@ -1,8 +1,9 @@
+.vscode/**
 **.ini
 *.exe
 *.o
 *.gch
 *.out
+**.txt
 # ignore tga files in root
 /*.tga 
-.vscode/**
